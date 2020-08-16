@@ -90,7 +90,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     cell.setStyleSheet("color: blue")
                     cell.setText(str(board_element))
                 elif (color_wrong and board_element is not None and
-                    self.board[i,j] not in self.board.get_digits_available((i, j))):
+                    self.board[i,j] not in self.board.get_digits_available(i, j)
+                ):
                     cell.setStyleSheet("color: red")
                 else:
                     cell.setStyleSheet("color: none")
@@ -123,7 +124,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_labels_from_board()
 
     def slot_click(self, i, j, button, mouse_event):
-        if self.board.is_available((i,j)):
+        if self.board.is_available(i,j):
             mouse_button = mouse_event.button()
             if mouse_button in (Qt.MiddleButton, Qt.LeftButton, Qt.RightButton):
                 button.setStyleSheet("color: none")

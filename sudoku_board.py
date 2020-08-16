@@ -11,7 +11,7 @@
 
 class Board:
     def __init__(self, data):
-        self.data = data
+        self.grid = data
         self.static_digits_index = frozenset(
             (i, j)
             for i, row in enumerate(data)
@@ -23,7 +23,7 @@ class Board:
         chars = []
         for i in range(9):
             for j in range(9):
-                item = self.data[i][j]
+                item = self.grid[i][j]
                 chars.append(f"{item}" if item is not None else '_')
                 if j%3 == 2:
                     chars.append('|')
@@ -33,47 +33,39 @@ class Board:
         return ''.join(chars)
 
     def __getitem__(self, coord):
-        return self.data[coord[0]][coord[1]]
+        return self.grid[coord[0]][coord[1]]
 
     def __setitem__(self, coord, value):
-        if self.is_available(coord):
-            self.data[coord[0]][coord[1]] = value
+        if self.is_available(*coord):
+            self.grid[coord[0]][coord[1]] = value
         else:
             raise IndexError("Cannot assign numbers to coordinates with initial values.")
 
-    def is_available(self, coord):
+    def is_available(self, i, j):
         """ Returns true if the coordinate is a valid slot (not one of the initial digits). """
-        return coord not in self.static_digits_index
+        return (i, j) not in self.static_digits_index
 
-    def next_coord(self, coord):
-        """ Returns `next` coordinate (i, j) in grid. 
-            (... -> (1, 8) -> (2, 0) -> (2, 1) -> ...)
-        If coord is (8, 8) [last], it returns (9, 0).
-        """
-        return (coord[0] + (coord[1]==8), (coord[1] + 1) % 9)
-
-    def get_digits_available(self, coord):
+    def get_digits_available(self, ii, jj):
         """ Returns all the digits available for the coord, considering sudoku's rules. """
-        ii, jj = coord
         block_start_i = (ii//3)*3 # rounds ii down to either 0, 3 or 6
         block_start_j = (jj//3)*3 # rounds jj down to either 0, 3 or 6
         digits_in_block = set(
-            self.data[y][x]
+            self.grid[y][x]
             for y in range(block_start_i, block_start_i + 3)
             for x in range(block_start_j, block_start_j + 3)
-            if (y,x) != coord
+            if (y, x) != (ii, jj)
         )
-        digits_in_row = set(self.data[ii][x] for x in range(9) if x != jj)
-        digits_in_column = set(self.data[y][jj] for y in range(9) if y != ii)
+        digits_in_row = set(self.grid[ii][x] for x in range(9) if x != jj)
+        digits_in_column = set(self.grid[y][jj] for y in range(9) if y != ii)
         return set(range(1, 10)) - (digits_in_block | digits_in_column | digits_in_row)
 
     def is_solvable(self):
         """ Validates static digits and check if it is solvable using recursion. 
             If it is, returns the board, otherwise returns False.
         """
-        new_board = Board([row.copy() for row in self.data])
+        new_board = Board([row.copy() for row in self.grid])
         for i, j in new_board.static_digits_index:
-            if new_board.data[i][j] not in new_board.get_digits_available((i, j)):
+            if new_board.grid[i][j] not in new_board.get_digits_available(i, j):
                 return False
 
         new_board.recursion_solve()
@@ -83,7 +75,7 @@ class Board:
 
     def is_solved(self):
         return all(
-            len(self.get_digits_available((i, j))) == 1
+            len(self.get_digits_available(i, j)) == 1
             for i in range(9)
             for j in range(9)
         )
@@ -93,24 +85,24 @@ class Board:
         for i in range(9):
             for j in range(9):
                 if (i, j) not in self.static_digits_index:
-                    self.data[i][j] = None
+                    self.grid[i][j] = None
 
-    def recursion_solve(self, coord=(0, 0)):
+    def recursion_solve(self, i=0, j=0):
         """ Solves sudoku board using brute-force backtracking algorithm. """
-        if coord == (9, 0):
+        if i == 9:
             return True
-            
-        if not self.is_available(coord): # if coord has initial digit, then ignore.
-            return self.recursion_solve(self.next_coord(coord))
+        
+        if not self.is_available(i, j): # if coord has initial digit, then ignore.
+            return self.recursion_solve(i + (j==8), (j + 1) % 9)
 
-        digits = self.get_digits_available(coord)
+        digits = self.get_digits_available(i, j)
         while digits:
-            self[coord] = digits.pop()
-            result = self.recursion_solve(self.next_coord(coord))
+            self.grid[i][j] = digits.pop()
+            result = self.recursion_solve(i + (j==8), (j + 1) % 9)
             if result:
                 return True
 
-        self[coord] = None
+        self.grid[i][j] = None
         return False
 
 
