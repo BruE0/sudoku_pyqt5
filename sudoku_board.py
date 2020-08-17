@@ -63,6 +63,7 @@ class Board:
         """ Validates static digits and check if it is solvable using recursion. 
             If it is, returns the board, otherwise returns False.
         """
+       
         new_board = Board([row.copy() for row in self.grid])
         for i, j in new_board.static_digits_index:
             if new_board.grid[i][j] not in new_board.get_digits_available(i, j):
@@ -91,7 +92,6 @@ class Board:
         """ Solves sudoku board using brute-force backtracking algorithm. """
         if i == 9:
             return True
-        
         if not self.is_available(i, j): # if coord has initial digit, then ignore.
             return self.recursion_solve(i + (j==8), (j + 1) % 9)
 
